@@ -7,8 +7,10 @@ import 'package:cook_waiter/App/common_widgets/common_custom_button.dart';
 import 'package:cook_waiter/App/common_widgets/common_snack_bar.dart';
 import 'package:cook_waiter/App/common_widgets/notification_pop%20_up_widget.dart';
 import 'package:cook_waiter/App/constants/app_fonts.dart';
+import 'package:cook_waiter/App/service/app_service.dart';
 import 'package:cook_waiter/App/views/orders/controller/orders_controller.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart';
+import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -138,13 +140,390 @@ class OrdersScreen extends GetView<OrdersController> {
         case 0:
           return _ordersTabContent(context);
         case 1:
-          return Center(child: Text("Recent Payment (Coming Soon)"));
+          return _recentPaymentTabContent(context);
         case 2:
           return _profileTabWidget(context);
         default:
           return _ordersTabContent(context);
       }
     });
+  }
+
+  Widget _recentPaymentTabContent(BuildContext context) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(
+          child: AppLoader(),
+        );
+      }
+
+      if (controller.errorMessage.value.isNotEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red.shade300,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error loading payments',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => controller.orderHistoryAPi(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        );
+      }
+
+      final paymentData = controller.paymentHistoryResponse.value.data ?? [];
+      if (paymentData.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.payment_outlined,
+                size: 64,
+                color: Colors.grey.shade300,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No payment history found',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: () => controller.orderHistoryAPi(),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: paymentData.length,
+          itemBuilder: (context, index) {
+            final payment = paymentData[index];
+            return _buildPaymentCard(payment);
+          },
+        ),
+      );
+    });
+  }
+
+// Payment Card Widget
+  Widget _buildPaymentCard(PaymentData payment) {
+    // Parse payment status
+    String getPaymentStatusText(String? status) {
+      switch (status) {
+        case '0':
+          return 'Failed';
+        case '1':
+          return 'Success';
+        default:
+          return 'Pending';
+      }
+    }
+
+    Color getPaymentStatusColor(String? status) {
+      switch (status) {
+        case '0':
+          return Colors.red;
+        case '1':
+          return Colors.green;
+        default:
+          return Colors.orange;
+      }
+    }
+
+    // Parse order status
+    String getOrderStatusText(String? status) {
+      switch (status) {
+        case '1':
+          return 'Completed';
+        case '2':
+          return 'Prepared';
+        case '3':
+          return 'Cancelled';
+        default:
+          return 'Unknown';
+      }
+    }
+
+    Color getOrderStatusColor(String? status) {
+      switch (status) {
+        case '1':
+          return Colors.green;
+        case '2':
+          return Colors.blue;
+        case '3':
+          return Colors.red;
+        default:
+          return Colors.grey;
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12, left: 12, right: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        payment.fullname ?? 'Unknown',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Order #${payment.orderNo ?? 'N/A'}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: getPaymentStatusColor(payment.paymentStatus)
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: getPaymentStatusColor(payment.paymentStatus),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        getPaymentStatusText(payment.paymentStatus),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: getPaymentStatusColor(payment.paymentStatus),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '₹${payment.total ?? '0'}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Details Row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailItem(
+                    icon: Icons.phone,
+                    label: 'Mobile',
+                    value: payment.mobilenumber ?? 'N/A',
+                  ),
+                ),
+                Expanded(
+                  child: _buildDetailItem(
+                    icon: payment.orderType == '1'
+                        ? Icons.restaurant
+                        : Icons.delivery_dining,
+                    label: 'Type',
+                    value: payment.orderType == '1' ? 'Dine-in' : 'Delivery',
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Payment and Order Status Row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailItem(
+                    icon: Icons.payment,
+                    label: 'Payment Mode',
+                    value: payment.modeOfPay ?? 'N/A',
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.shopping_bag,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Status: ',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: getOrderStatusColor(payment.status)
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          getOrderStatusText(payment.status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: getOrderStatusColor(payment.status),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Date and Table Info
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatDate(payment.createdDate),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                if (payment.tableNo != '0')
+                  Text(
+                    'Table ${payment.tableNo} • Seat ${payment.seatNo}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Helper widget for detail items
+  Widget _buildDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: Colors.grey.shade600,
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+// Helper method to format date
+  String _formatDate(String? dateString) {
+    if (dateString == null) return 'N/A';
+
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date).inDays;
+
+      if (difference == 0) {
+        return 'Today ${DateFormat('hh:mm a').format(date)}';
+      } else if (difference == 1) {
+        return 'Yesterday ${DateFormat('hh:mm a').format(date)}';
+      } else {
+        return DateFormat('MMM dd, yyyy • hh:mm a').format(date);
+      }
+    } catch (e) {
+      return dateString;
+    }
   }
 
   Widget _ordersTabContent(BuildContext context) {
@@ -216,7 +595,8 @@ class OrdersScreen extends GetView<OrdersController> {
                           ""
                               'onTap': () {
                             if (e.paymentStatus == "1") {
-                              showPaymentSuccessDialog(context);
+                              // showPaymentSuccessDialog(context,
+                              //     e.t ?? "" , e.paymentStatus == "1" ? true : false);
                             } else {
                               showBillSummaryDialog(context, e.orderNo ?? "");
                             }
@@ -990,13 +1370,27 @@ class OrdersScreen extends GetView<OrdersController> {
                   isBold: true),
               const SizedBox(height: 20),
               CustomFullButton(
-                title: "Proceed to Pay",
+                title: "Payment Received",
                 width: 200,
-                onTap: () {
+                onTap: () async {
+                  await controller.updatePayment(orderNo);
+
+                  // Close current dialog
                   Get.back();
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    showPaymentSuccessDialog(dialogContext);
-                  });
+
+                  if (controller.updatePaymentResponse.value.status
+                          ?.toApiStatus() ==
+                      ApiStatus.success200) {
+                    // Show success dialog
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      showPaymentSuccessDialog(
+                        Get.context!,
+                        controller.updatePaymentResponse.value.data?.rountOff,
+                        orderNo,
+                      );
+                    });
+                  }
+                  // else: error snackbar already handled inside controller
                 },
               ),
             ],
@@ -1046,7 +1440,7 @@ class OrdersScreen extends GetView<OrdersController> {
         fontSize: 14,
       );
 
-  void showPaymentSuccessDialog(BuildContext context) {
+  void showPaymentSuccessDialog(BuildContext context, amount, id) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -1080,8 +1474,8 @@ class OrdersScreen extends GetView<OrdersController> {
               const SizedBox(height: 16),
 
               /// Payment text
-              const Text(
-                'Payment of ₹899 for Order ID#12345 has been successfully received.',
+              Text(
+                'Payment of $amount for Order ID#${id} has been successfully received.',
                 style: TextStyle(fontSize: 14),
               ),
 

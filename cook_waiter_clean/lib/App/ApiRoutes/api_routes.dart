@@ -14,5 +14,11 @@ class ApiRoutes {
   static const String updateOrderDelay = '/API/OrderInfo/UpdateOrderDelay';
   static const String orderDetailAPi = '/API/OrderInfo/GetOrderDetails';
   static const String notificationApi = '/API/OrderInfo/getPaymentInfoApp';
+  static const String paymentHistory = '/API/OrderInfo/ClosedOrders';
+
+  static const String paymentUpdate = '/API/OrderInfo/CloseOrder';
+
+
+
 
 }

@@ -5,6 +5,8 @@ import 'package:cook_waiter/App/views/orders/data/common_request_data.dart';
 import 'package:cook_waiter/App/views/orders/data/notification_response_data.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_detail_response.dart';
+import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
+import 'package:cook_waiter/App/views/orders/data/update_payment_response_data.dart';
 
 Future<OrderListResponseData> callOrdersApi(
   String companyId,
@@ -86,8 +88,9 @@ Future<StatusUpdateResponseData> orderDelayApi(
     endpoint: ApiRoutes.updateOrderDelay,
     fromJson: (json) => StatusUpdateResponseData.fromJson(json),
     token: "",
-    data: OrderDelayRequestData(orderId: orderId, sno: sno).toJson(),
-    queryParams: {"Company_Id": userSession.companyId},
+    data: OrderDelayRequestData(orderId: orderId, sno: sno ,      chefId: userSession.sno, // ✅ Pass logged-in user's sno
+).toJson(),
+    queryParams: {"Company_Id": userSession.companyId ,},
   );
 }
 
@@ -114,6 +117,37 @@ Future<OrderDetailResponseData> orderDetailAPi(
   return await ApiService.get<OrderDetailResponseData>(
     endpoint: ApiRoutes.orderDetailAPi,
     fromJson: (json) => OrderDetailResponseData.fromJson(json),
+    token: "",
+    queryParams: {
+      // "Company_Id": companyId,
+      "orderId": orderId.toString(),
+    },
+  );
+}
+
+
+Future<PaymentHistoryResponseData> getRecentPayment(
+  // String companyId,
+  String companyId,
+) async {
+  return await ApiService.get<PaymentHistoryResponseData>(
+    endpoint: ApiRoutes.paymentHistory,
+    fromJson: (json) => PaymentHistoryResponseData.fromJson(json),
+    token: "",
+    queryParams: {
+      "Company_Id": companyId,
+    },
+  );
+}
+
+
+Future<UpdatePaymentResponseData> updatePaymentAPi(
+  // String companyId,
+  String orderId,
+) async {
+  return await ApiService.get<UpdatePaymentResponseData>(
+    endpoint: ApiRoutes.paymentUpdate,
+    fromJson: (json) => UpdatePaymentResponseData.fromJson(json),
     token: "",
     queryParams: {
       // "Company_Id": companyId,

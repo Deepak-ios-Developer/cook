@@ -10,6 +10,8 @@ import 'package:cook_waiter/App/views/orders/data/notification_response_data.dar
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart' as data;
 import 'package:cook_waiter/App/views/orders/data/orders_detail_response.dart';
+import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
+import 'package:cook_waiter/App/views/orders/data/update_payment_response_data.dart';
 import 'package:cook_waiter/App/views/orders/service/orders_service.dart';
 import 'package:get/get.dart';
 import 'package:gif/gif.dart';
@@ -24,6 +26,8 @@ class OrdersController extends GetxController
   var tabelResponse = GetAllTabelListResponseData().obs;
   var orderDetailResponse = OrderDetailResponseData().obs;
   var notificationResponse = NotificationResponseData().obs;
+  var paymentHistoryResponse = PaymentHistoryResponseData().obs;
+  var updatePaymentResponse = UpdatePaymentResponseData().obs;
 
   int orderStatusParam = 1; // Default for tab 0
 
@@ -222,6 +226,7 @@ class OrdersController extends GetxController
     // Fetch initial orders
     getOrdersApi(orderStatus: 1);
     callNotificationApi();
+    orderHistoryAPi();
   }
 
   @override
@@ -374,7 +379,7 @@ class OrdersController extends GetxController
         if (currentStatusCode != "5") {
           // If current status is "Preparing", we need to stop the timer
           updateLocalOrderStatus(
-              index, nextStatus?["code"], nextStatus?["label"]); 
+              index, nextStatus?["code"], nextStatus?["label"]);
           CommonSnackbar.show(
             Get.context!,
             message: "Order moved to ${nextStatus?["label"]}",
@@ -552,6 +557,78 @@ class OrdersController extends GetxController
       }
     } catch (e) {
       errorMessage.value = e.toString();
+      CommonSnackbar.show(
+        Get.context!,
+        message: "Something Went Wrong",
+        isSuccess: false,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> orderHistoryAPi() async {
+    isLoading.value = true;
+    errorMessage.value = '';
+    var companyId = SessionStorage.getCompanyId() ?? '';
+    print(" From Controller Company ID: $companyId");
+
+    try {
+      final response = await getRecentPayment(companyId);
+      paymentHistoryResponse.value = response;
+      paymentHistoryResponse.refresh();
+
+      final apiStatus = paymentHistoryResponse.value.status?.toApiStatus();
+      print(" From Controller API Status: $apiStatus");
+
+      if (apiStatus == ApiStatus.success200) {
+      } else {
+        CommonSnackbar.show(
+          Get.context!,
+          message: "Orders Fetch Failed",
+          isSuccess: false,
+        );
+      }
+    } catch (e) {
+      errorMessage.value = e.toString();
+      print(" From Controller Error: $e");
+      CommonSnackbar.show(
+        Get.context!,
+        message: "Something Went Wrong",
+        isSuccess: false,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> updatePayment(orderId) async {
+    isLoading.value = true;
+    errorMessage.value = '';
+    var companyId = SessionStorage.getCompanyId() ?? '';
+    print(" From Controller Company ID: $companyId");
+
+    try {
+      final response = await updatePaymentAPi(orderId);
+      updatePaymentResponse.value = response;
+      updatePaymentResponse.refresh();
+
+      final apiStatus = orderDetailResponse.value.status?.toApiStatus();
+      print(" From Controller API Status: $apiStatus");
+
+      callNotificationApi();
+
+      if (apiStatus == ApiStatus.success200) {
+      } else {
+        CommonSnackbar.show(
+          Get.context!,
+          message: "Orders Update Failed",
+          isSuccess: false,
+        );
+      }
+    } catch (e) {
+      errorMessage.value = e.toString();
+      print(" From Controller Error: $e");
       CommonSnackbar.show(
         Get.context!,
         message: "Something Went Wrong",

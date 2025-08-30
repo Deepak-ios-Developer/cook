@@ -2,7 +2,6 @@ class StatusUpdateRequestData {
   String? curOrderStatus;
   String? sno;
   String? chefId;
-  
 
   StatusUpdateRequestData({this.curOrderStatus, this.sno = "", this.chefId});
 
@@ -20,8 +19,6 @@ class StatusUpdateRequestData {
     return data;
   }
 }
-
-
 
 class StatusUpdateResponseData {
   String? status;
@@ -42,18 +39,21 @@ class StatusUpdateResponseData {
 class OrderDelayRequestData {
   String? orderId;
   String? sno;
+  String? chefId;
 
-  OrderDelayRequestData({this.orderId, this.sno});
+  OrderDelayRequestData({this.orderId, this.sno = "", this.chefId});
 
   OrderDelayRequestData.fromJson(Map<String, dynamic> json) {
     orderId = json['orderId'];
     sno = json['sno'];
+    chefId = json['curUserId'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['orderId'] = this.orderId;
     data['sno'] = this.sno;
+    data['curUserId'] = this.chefId;
     return data;
   }
 }
