@@ -49,6 +49,7 @@ class Data {
   String? lastLogin;
   bool? isLoggedIn;
   dynamic? imageUrl;
+  String ? sessionId;
 
 
   Data(
@@ -61,7 +62,8 @@ class Data {
       this.companyName,
       this.lastLogin,
       this.isLoggedIn,
-      this.imageUrl
+      this.imageUrl,
+      this.sessionId
       
       
       });
@@ -77,6 +79,7 @@ class Data {
     lastLogin = json['lastLogin'];
     isLoggedIn = json['isLoggedIn'];
     imageUrl = json['Company_Logo'];
+    sessionId = json['sessionid'];
   }
 
   Map<String, dynamic> toJson() {
@@ -90,6 +93,8 @@ class Data {
     data['CompanyName'] = this.companyName;
     data['lastLogin'] = this.lastLogin;
         data['Company_Logo'] = this.imageUrl;
+    data['isLoggedIn'] = this.isLoggedIn;
+    data['sessionid'] = this.sessionId;
 
    return data;
   }

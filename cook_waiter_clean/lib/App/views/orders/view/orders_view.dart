@@ -11,6 +11,7 @@ import 'package:cook_waiter/App/service/app_service.dart';
 import 'package:cook_waiter/App/views/orders/controller/orders_controller.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart';
 import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
@@ -100,28 +101,38 @@ class OrdersScreen extends GetView<OrdersController> {
             ),
           ),
           body: _buildBody(context),
-          bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: AppColors.white,
-            elevation: 0.1,
-            currentIndex: _bottomTabIndex.value,
+          bottomNavigationBar: CurvedNavigationBar(
+            backgroundColor: Colors.white,
+            color: AppColors.primary,
+            buttonBackgroundColor: AppColors.primary,
+            height: 70,
+            index: _bottomTabIndex.value,
+            items: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.list_alt, size: 30, color: AppColors.white),
+                  SizedBox(height: 4),
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.payment, size: 30, color: AppColors.white),
+                  SizedBox(height: 4),
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.person, size: 30, color: AppColors.white),
+                  SizedBox(height: 4),
+                ],
+              ),
+            ],
             onTap: (index) {
               _bottomTabIndex.value = index;
             },
-            selectedItemColor: AppColors.primary,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list_alt),
-                label: 'Orders',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.payment),
-                label: 'Recent Payment',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person),
-                label: 'Profile',
-              ),
-            ],
           ),
         ));
   }

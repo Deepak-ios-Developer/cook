@@ -52,6 +52,7 @@ class UserSession {
   final String lastLogin;
   final bool isLoggedIn;
   final String imageUrl;
+  final String sessionId;
 
   UserSession({
     required this.sno,
@@ -64,6 +65,7 @@ class UserSession {
     required this.lastLogin,
     required this.isLoggedIn,
     required this.imageUrl,
+     required this.sessionId,
   });
 
   factory UserSession.fromJson(Map<String, dynamic> json) {
@@ -77,7 +79,8 @@ class UserSession {
       companyName: json['CompanyName'],
       lastLogin: json['lastLogin'],
       isLoggedIn: json['isLoggedIn'],
-      imageUrl: json['Company_Logo']
+      imageUrl: json['Company_Logo'],
+      sessionId: json['sessionid'],
 
     );
   }
@@ -93,7 +96,8 @@ class UserSession {
       'CompanyName': companyName,
       'lastLogin': lastLogin,
       'isLoggedIn': isLoggedIn,
-      'Company_Logo':imageUrl
+      'Company_Logo':imageUrl,
+      'sessionid': sessionId
     };
   }
 }

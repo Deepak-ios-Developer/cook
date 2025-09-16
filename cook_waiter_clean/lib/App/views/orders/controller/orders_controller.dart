@@ -1,6 +1,7 @@
 // 🎯 lib/views/orders/controller/orders_controller.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' as IO show Socket;
 
 import 'package:cook_waiter/App/Storage/session_storage.dart';
 import 'package:cook_waiter/App/common_widgets/common_snack_bar.dart';
@@ -13,8 +14,10 @@ import 'package:cook_waiter/App/views/orders/data/orders_detail_response.dart';
 import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
 import 'package:cook_waiter/App/views/orders/data/update_payment_response_data.dart';
 import 'package:cook_waiter/App/views/orders/service/orders_service.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gif/gif.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class OrdersController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -28,6 +31,7 @@ class OrdersController extends GetxController
   var notificationResponse = NotificationResponseData().obs;
   var paymentHistoryResponse = PaymentHistoryResponseData().obs;
   var updatePaymentResponse = UpdatePaymentResponseData().obs;
+  final socketService = SocketService();
 
   int orderStatusParam = 1; // Default for tab 0
 
@@ -219,7 +223,7 @@ class OrdersController extends GetxController
   @override
   void onInit() {
     super.onInit();
-
+connectToSocket();
     // Initialize GifController
     gifController = GifController(vsync: this);
 
@@ -233,7 +237,19 @@ class OrdersController extends GetxController
   void dispose() {
     super.dispose();
     gifController.dispose();
+    socketService.disconnect();
     timer?.cancel();
+  }
+
+  void connectToSocket() async {
+    socketService.connectToSocket();
+    final userSession = await SessionStorage.getUserSession();
+
+// Before placing an order
+    socketService.registerClient(
+      sessionId: userSession?.sessionId ?? "",
+      restaurantClientId: userSession?.companyId ?? "",
+    );
   }
 
   Future<void> fetchOrderStatuses() async {
@@ -772,5 +788,77 @@ class OrderStatusModel {
 
   factory OrderStatusModel.fromJson(Map<String, dynamic> json) {
     return OrderStatusModel(code: json['code'], label: json['label']);
+  }
+}
+
+class SocketService {
+  late IO.Socket socket;
+
+  void connectToSocket() {
+    socket = IO.io('https://51baaeba68b9.ngrok-free.app', <String, dynamic>{
+      'transports': ['websocket'],
+      'autoConnect': false,
+    });
+
+    socket.connect();
+
+    // Connection events
+    socket.onConnect((_) => print('✅ Connected to socket server'));
+    socket.onDisconnect((_) => print('❌ Disconnected from socket server'));
+    socket.onConnectError((data) => print('⚠️ Connect error: $data'));
+    socket.onError((data) => print('⚠️ General error: $data'));
+  }
+
+  /// Register client: emit and listen on the same event
+  void registerClient({
+    required String sessionId,
+    String? restaurantClientId,
+    void Function(bool success, String? message)? onAck,
+    void Function(dynamic data)? onServerUpdate,
+  }) {
+    final registerData = {
+      "clientType": "mobile",
+      "sessionId": sessionId,
+      if (restaurantClientId != null) "restaurantClientId": restaurantClientId,
+    };
+
+    // 1️⃣ Emit with acknowledgement
+    socket.emitWithAck("register-client", registerData, ack: (response) {
+      print("Client registration response: $response");
+      final success = response['success'] ?? false;
+      final message = response['message'];
+
+      if (success) {
+        print("Client registered successfully");
+      } else {
+        print("Client registration failed: $message");
+      }
+
+      if (onAck != null) onAck(success, message);
+    });
+
+    // 2️⃣ Listen to all events
+   socket.onAny((event, data) {
+  print("📌 Event: $event, Data: $data");
+
+  if (event == 'order-received' && data is List && data.isNotEmpty) {
+    CommonSnackbar.show(
+      Get.context!,
+      message: "New Order Received! Order ID: ${data[0]['orderId']}",
+      isSuccess: true,
+    );
+  }
+});
+
+
+    // 3️⃣ Listen specifically for server pushes on "register-client"
+    socket.on("register-client", (data) {
+      print("🔄 Received server update on register-client: $data");
+      if (onServerUpdate != null) onServerUpdate(data);
+    });
+  }
+
+  void disconnect() {
+    socket.disconnect();
   }
 }

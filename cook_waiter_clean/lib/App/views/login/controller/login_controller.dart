@@ -61,6 +61,7 @@ class LoginController extends GetxController {
             companyName: loginResponse.value.data?.companyName ?? '',
             lastLogin: loginResponse.value.data?.lastLogin ?? '',
             imageUrl: loginResponse.value.data?.imageUrl ?? '',
+            sessionId: loginResponse.value.data?.sessionId ?? '',
 
             isLoggedIn: true,
           ),
