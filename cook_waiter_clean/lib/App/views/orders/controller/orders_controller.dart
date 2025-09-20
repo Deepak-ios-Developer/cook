@@ -132,34 +132,41 @@ class OrdersController extends GetxController
   }
 
   // Updated method to apply all filters including chef filter
-  void applyFilters() {
-    var tempOrders = List<OrderList>.from(orders);
+//   void applyFilters() {
+//   var tempOrders = List<OrderList>.from(orders);
 
-    print('Total Orders: ${orders.length}');
-    print(
-        'Chef Filter Enabled: ${isChefFilterEnabled.value}, Chef ID: ${selectedChefId.value}');
-    print('Table Filter: ${selectedTableNo.value}');
+//   print('Total Orders: ${orders.length}');
+//   print('Chef Filter Enabled: ${isChefFilterEnabled.value}, Chef ID: ${selectedChefId.value}');
+//   print('Table Filter: ${selectedTableNo.value}');
 
-    for (var o in tempOrders) {
-      print('Order ${o.orderNo} - Table: ${o.tableNo}, Chef: ${o.chefId}');
-    }
+//   for (var o in tempOrders) {
+//     print('Order ${o.orderNo} - Table: ${o.tableNo}, Chef: ${o.chefId}');
+//   }
 
-    // ✅ Only apply chef filter when toggle is ON
-    if (isChefFilterEnabled.value) {
-      tempOrders = tempOrders
-          .where((order) => order.chefId == selectedChefId.value)
-          .toList();
-    }
+//   // ✅ Only apply chef filter when toggle is ON
+//   if (isChefFilterEnabled.value) {
+//     tempOrders = tempOrders
+//         .where((order) => order.chefId == selectedChefId.value)
+//         .toList();
+//   }
 
-    // ✅ Only apply table filter when a specific table is chosen
-    if (selectedTableNo.value.isNotEmpty) {
-      tempOrders = tempOrders
-          .where((order) => (order.tableNo ?? '') == selectedTableNo.value)
-          .toList();
-    }
+//   // ✅ Only apply table filter when a specific table is chosen
+//   if (selectedTableNo.value.isNotEmpty) {
+//     tempOrders = tempOrders
+//         .where((order) => (order.tableNo ?? '') == selectedTableNo.value)
+//         .toList();
+//   }
 
-    filteredOrders.assignAll(tempOrders);
-  }
+//   // Update the filtered orders list
+//   filteredOrders.assignAll(tempOrders);
+
+//   // Optionally, print filtered orders for debugging
+//   print('Filtered Orders: ${filteredOrders.length}');
+//   for (var o in filteredOrders) {
+//     print('Filtered Order ${o.orderNo} - Table: ${o.tableNo}, Chef: ${o.chefId}');
+//   }
+// }
+
 
   // Get status label from code
   String getStatusLabel(String code) {
@@ -293,16 +300,55 @@ connectToSocket();
     getOrdersApi(orderStatus: orderStatusParam);
   }
 
-  void changeTable(int index) {
-    selectedTable.value = index;
+void applyFilters() {
+  var tempOrders = List<OrderList>.from(orders);
 
-    // Apply all filters including chef filter
-    applyFilters();
+  print('Total Orders: ${orders.length}');
+  print('Chef Filter Enabled: ${isChefFilterEnabled.value}, Chef ID: ${selectedChefId.value}');
+  print('Table Filter: ${selectedTableNo.value}');
 
-    ordersResponse.refresh();
-    print(
-        "DEBUG JSON: ${jsonEncode(filteredOrders.map((e) => e.toJson()).toList())}");
+  for (var o in tempOrders) {
+    print('Order ${o.orderNo} - Table: ${o.tableNo}, Chef: ${o.chefId}');
   }
+
+  // ✅ Apply chef filter only when toggle is ON
+  if (isChefFilterEnabled.value) {
+    tempOrders = tempOrders
+        .where((order) => order.chefId == selectedChefId.value)
+        .toList();
+  }
+
+  // ✅ Apply table filter only when a specific table is chosen
+  if (selectedTableNo.value.isNotEmpty) {
+    tempOrders = tempOrders
+        .where((order) => (order.tableNo ?? '') == selectedTableNo.value)
+        .toList();
+  }
+
+  // Update the filtered orders list
+  filteredOrders.assignAll(tempOrders);
+
+  // Debugging filtered results
+  print('Filtered Orders: ${filteredOrders.length}');
+  for (var o in filteredOrders) {
+    print('Filtered Order ${o.orderNo} - Table: ${o.tableNo}, Chef: ${o.chefId}');
+  }
+}
+
+void changeTable(int index, String tableNo) {
+  selectedTable.value = index;
+  selectedTableNo.value = tableNo; // ✅ update table filter value
+
+  // Apply all filters including chef filter
+  applyFilters();
+    getOrdersApi(orderStatus: orderStatusParam);
+
+  ordersResponse.refresh();
+  print(
+    "DEBUG JSON: ${jsonEncode(filteredOrders.map((e) => e.toJson()).toList())}",
+  );
+}
+
 
   Future<void> getOrdersApi({int orderStatus = 1}) async {
     isLoading.value = true;

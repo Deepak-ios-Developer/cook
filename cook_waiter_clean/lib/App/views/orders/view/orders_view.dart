@@ -83,13 +83,13 @@ class OrdersScreen extends GetView<OrdersController> {
                 ),
               ),
               const SizedBox(width: 20),
-              GestureDetector(
-                onTap: () {},
-                child: SvgPicture.asset(
-                  'assets/power.svg',
-                  height: 25,
-                ),
-              ),
+              // GestureDetector(
+              //   onTap: () {},
+              //   child: SvgPicture.asset(
+              //     'assets/power.svg',
+              //     height: 25,
+              //   ),
+              // ),
               const SizedBox(width: 20),
             ],
             bottom: PreferredSize(
@@ -140,9 +140,10 @@ class OrdersScreen extends GetView<OrdersController> {
   int _getNotificationCount() {
     // Get unread notifications count
     final notifications = controller.notificationResponse.value.data ?? [];
-
+    var count =
+        notifications.where((value) => value.paymentStatus == "0").length;
     // Option 1: Count all notifications
-    return notifications.length;
+    return count;
   }
 
   Widget _buildBody(BuildContext context) {
@@ -573,7 +574,8 @@ class OrdersScreen extends GetView<OrdersController> {
   }
 
   void _toggleNotifications(BuildContext context) {
-    print("toggleNotifications");
+    print(
+        "toggleNotifications ${controller.notificationResponse.value.data?.length}");
     if (_notificationEntry != null) {
       _notificationEntry?.remove();
       _notificationEntry = null;
@@ -602,7 +604,11 @@ class OrdersScreen extends GetView<OrdersController> {
                           'message':
                               "Payment request initiated for Order ID#${e.orderNo}.",
                           'timeAgo': "",
-                          'isSuccess': e.paymentStatus == "1" ? true : false,
+                          "unReadCount": _getNotificationCount(),
+                          'isSuccess':
+                              e.paymentStatus == "1" && e.paymentStatus != null
+                                  ? true
+                                  : false,
                           ""
                               'onTap': () {
                             if (e.paymentStatus == "1") {
@@ -757,7 +763,14 @@ class OrdersScreen extends GetView<OrdersController> {
               }
 
               return GestureDetector(
-                onTap: () => controller.changeTable(index),
+                onTap: () {
+                  if (index == 0) {
+                    controller.changeTable(index, ""); // ✅ All = no filter
+                  } else {
+                    final table = tables[index - 1];
+                    controller.changeTable(index, table.tableNo ?? "");
+                  }
+                },
                 child: Container(
                   width: 65,
                   decoration: BoxDecoration(
@@ -808,11 +821,18 @@ class OrdersScreen extends GetView<OrdersController> {
           child: controller.selectedTab.value == 0
               ? Row(
                   children: [
-                    Obx(() => Switch(
+                    Obx(
+                      () => Transform.scale(
+                        scale:
+                            0.7, // Reduce the size, adjust as needed (1.0 = default)
+                        child: Switch(
                           value: controller.isChefFilterEnabled.value,
                           onChanged: (value) => controller.toggleChefFilter(),
                           activeColor: AppColors.primary,
-                        )),
+                        ),
+                      ),
+                    ),
+
                     const SizedBox(width: 8),
                     const Text(
                       "Show My Orders Only",
@@ -903,7 +923,7 @@ class OrdersScreen extends GetView<OrdersController> {
     final currentStatusCode = order.orderStatusCode ?? "1";
     final isUpdatingThisOrder = controller.isOrderUpdating(order.sno ?? "");
 
-    // 🛑 Handle Delayed Status Code "5"
+    // 🛑 Delayed Orders (Status Code = 5)
     if (currentStatusCode == "5") {
       return Container(
         color: isGrey ? AppColors.listGrey : Colors.white,
@@ -911,20 +931,27 @@ class OrdersScreen extends GetView<OrdersController> {
         child: Row(
           children: [
             SizedBox(
-              width: 40,
-              child: Text(
-                order.tableNo ?? '',
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              width: 60,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "T:${order.tableNo ?? ''}",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  if (order.seatNo != null && order.seatNo!.isNotEmpty)
+                    Text("S:${order.seatNo!}",
+                        style: const TextStyle(fontSize: 12)),
+                ],
               ),
             ),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Row for item name and "Delayed" text
+                  // Item + Delayed badge
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
@@ -943,25 +970,15 @@ class OrdersScreen extends GetView<OrdersController> {
                         child: const Text(
                           "Delayed",
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12),
                         ),
                       ),
                     ],
                   ),
-                  Text("Qty: ${order.orderqty}"),
-                  // Show chef info for delayed orders
-                  // if (order.chefId != null && order.chefId!.isNotEmpty)
-                  //   Text(
-                  //     "Chef ID: ${order.chefId}",
-                  //     style: TextStyle(
-                  //       fontSize: 12,
-                  //       color: Colors.grey[600],
-                  //     ),
-                  //   ),
-                  SizedBox(height: 10),
+                  Text("Qty: ${order.orderqty ?? ''}"),
+                  const SizedBox(height: 10),
 
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 150),
@@ -985,7 +1002,7 @@ class OrdersScreen extends GetView<OrdersController> {
                               width: 20,
                               color: Colors.white,
                             ),
-                      text: "Preparing" ?? "Unknown",
+                      text: "Preparing",
                       sliderButtonIconPadding: 7,
                       textStyle: const TextStyle(
                         fontSize: 11,
@@ -1004,9 +1021,7 @@ class OrdersScreen extends GetView<OrdersController> {
                           order.orderStatusCode ?? "1",
                           index,
                         );
-                        await Future.delayed(
-                          const Duration(seconds: 1),
-                        );
+                        await Future.delayed(const Duration(seconds: 1));
                         _sliderKey.currentState?.reset();
                       },
                     ),
@@ -1019,17 +1034,26 @@ class OrdersScreen extends GetView<OrdersController> {
       );
     }
 
-    // ✅ Normal order rendering
+    // ✅ Normal Orders
     return Container(
       color: isGrey ? AppColors.listGrey : Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       child: Row(
         children: [
           SizedBox(
-            width: 40,
-            child: Text(
-              order.tableNo ?? '',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            width: 60,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "T:${order.tableNo ?? ''}",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                if (order.seatNo != null && order.seatNo!.isNotEmpty)
+                  Text("S:${order.seatNo!}",
+                      style: const TextStyle(fontSize: 12)),
+              ],
             ),
           ),
           Expanded(
@@ -1040,8 +1064,8 @@ class OrdersScreen extends GetView<OrdersController> {
                   order.productName ?? '',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text("Qty: ${order.orderqty}"),
-                // Updated chef display logic
+                Text("Qty: ${order.orderqty ?? ''}"),
+
                 if (order.chefId != null && order.chefId!.isNotEmpty)
                   Text(
                     "Chef ID: ${order.chefId}",
@@ -1058,109 +1082,91 @@ class OrdersScreen extends GetView<OrdersController> {
                 else
                   Text(
                     "Chef: Unassigned",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+
                 const SizedBox(height: 6),
                 const SizedBox(height: 20),
 
-                // Rest of your existing slide action code...
+                // 🔥 Slide action only when allowed
                 if (controller.selectedTab.value != 2 &&
                     controller.canUpdateOrder(currentStatusCode))
-                  Row(
-                    children: [
-                      Container(
+                  Obx(() {
+                    final isUpdatingThisOrder =
+                        controller.isOrderUpdating(order.sno ?? "");
+                    final nextStatus =
+                        controller.getNextStatus(currentStatusCode);
+
+                    if (nextStatus == null) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
+                          color: AppColors.listGrey,
                           borderRadius: BorderRadius.circular(25),
                         ),
-                        child: Obx(() {
-                          final isUpdatingThisOrder =
-                              controller.isOrderUpdating(order.sno ?? "");
-                          final nextStatus =
-                              controller.getNextStatus(currentStatusCode);
+                        child: const Text(
+                          "Completed",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
+                      );
+                    }
 
-                          if (nextStatus == null) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.listGrey,
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                              child: const Text(
-                                "Completed",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                    return ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 150),
+                      child: SlideAction(
+                        key: _sliderKey,
+                        elevation: 0.5,
+                        outerColor: AppColors.white,
+                        height: 50,
+                        submittedIcon: isUpdatingThisOrder
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                  strokeWidth: 2,
                                 ),
+                              )
+                            : SvgPicture.asset(
+                                'assets/green_check.svg',
+                                height: 20,
+                                width: 20,
+                                color: Colors.white,
                               ),
-                            );
-                          }
-
-                          return Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 150),
-                              child: SlideAction(
-                                key: _sliderKey,
-                                elevation: 0.5,
-                                outerColor: AppColors.white,
-                                height: 50,
-                                submittedIcon: isUpdatingThisOrder
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          color: AppColors.primary,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : SvgPicture.asset(
-                                        'assets/green_check.svg',
-                                        height: 20,
-                                        width: 20,
-                                        color: Colors.white,
-                                      ),
-                                text: order.orderStatus ?? "Unknown",
-                                sliderButtonIconPadding: 7,
-                                textStyle: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color.fromRGBO(0, 0, 0, 1),
-                                ),
-                                sliderButtonIcon: SvgPicture.asset(
-                                  'assets/green_check.svg',
-                                  height: 18,
-                                  width: 18,
-                                ),
-                                onSubmit: () async {
-                                  await controller.updateOrderStatusDynamic(
-                                    order.orderNo ?? "",
-                                    order.sno ?? "",
-                                    order.orderStatusCode ?? "1",
-                                    index,
-                                  );
-                                  await Future.delayed(
-                                    const Duration(seconds: 1),
-                                  );
-                                  _sliderKey.currentState?.reset();
-                                },
-                              ),
-                            ),
+                        text: order.orderStatus ?? "Unknown",
+                        sliderButtonIconPadding: 7,
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromRGBO(0, 0, 0, 1),
+                        ),
+                        sliderButtonIcon: SvgPicture.asset(
+                          'assets/green_check.svg',
+                          height: 18,
+                          width: 18,
+                        ),
+                        onSubmit: () async {
+                          await controller.updateOrderStatusDynamic(
+                            order.orderNo ?? "",
+                            order.sno ?? "",
+                            order.orderStatusCode ?? "1",
+                            index,
                           );
-                        }),
+                          await Future.delayed(const Duration(seconds: 1));
+                          _sliderKey.currentState?.reset();
+                        },
                       ),
-                    ],
-                  ),
+                    );
+                  }),
               ],
             ),
           ),
 
-          // Rest of your existing right side content...
+          // 🔥 Right side (GIF, Add Time, Refresh button)
           if (controller.selectedTab.value == 0) ...[
             Column(
               children: [
@@ -1174,15 +1180,7 @@ class OrdersScreen extends GetView<OrdersController> {
                         placeholder: (context) => const Text('Loading...'),
                       )
                     : Image.asset("assets/pan.png", height: 50, width: 50),
-                // Text(
-                //   orderTime,
-                //   style: const TextStyle(
-                //     color: AppColors.primary,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
-                if (controller
-                    .shouldShowPreparingAnimation(currentStatusCode)) ...[
+                if (controller.shouldShowPreparingAnimation(currentStatusCode))
                   Obx(
                     () => Text(
                       " ${controller.observeCountdown(order.sno ?? "").value}",
@@ -1192,30 +1190,23 @@ class OrdersScreen extends GetView<OrdersController> {
                       ),
                     ),
                   ),
-                ],
                 const SizedBox(height: 5),
-                order.orderStatusCode == "2"
-                    ? ElevatedButton(
-                        onPressed: () {
-                          controller.callOrderDelayApi(
-                            order.orderNo ?? "",
-                            order.sno ?? "",
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                        ),
-                        child: const Text("Add Time"),
-                      )
-                    : const SizedBox(),
+                if (order.orderStatusCode == "2")
+                  ElevatedButton(
+                    onPressed: () {
+                      controller.callOrderDelayApi(
+                          order.orderNo ?? "", order.sno ?? "");
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 4),
+                    ),
+                    child: const Text("Add Time"),
+                  ),
               ],
             ),
           ],
@@ -1239,7 +1230,7 @@ class OrdersScreen extends GetView<OrdersController> {
         ],
       ),
     );
-  } // Helper method to get status color
+  }
 
   Widget _tabelHeaderWidget() {
     final controller = Get.find<OrdersController>();
