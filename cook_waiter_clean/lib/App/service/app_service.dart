@@ -144,12 +144,7 @@ class ApiService {
   }
 
   // Helper to determine if token should be added
-  static bool _isAuthFree(String endpoint) {
-    return endpoint == login ||
-        endpoint == verifyOtp ||
-        endpoint == doctorLogin ||
-        endpoint == doctorVerifyOtp;
-  }
+  
 
   // static Future<String?> _getToken(String endpoint, String? customToken) async {
   //   if (_isAuthFree(endpoint)) return null;
