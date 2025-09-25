@@ -36,13 +36,13 @@ class Data {
   String? orderqty;
   String? total;
   String? gst;
-  Null? starrating;
-  Null? feedback;
+  dynamic starrating;
+  dynamic feedback;
   String? createdDate;
-  Null? updatedDate;
+  dynamic updatedDate;
   String? status;
-  Null? paymentStatus;
-  Null? modeOfPay;
+  dynamic paymentStatus;
+  dynamic modeOfPay;
 
   Data(
       {this.sno,

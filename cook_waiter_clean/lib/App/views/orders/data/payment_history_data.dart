@@ -37,8 +37,8 @@ class PaymentData {
   String? orderqty;
   String? total;
   String? gst;
-  Null? starrating;
-  Null? feedback;
+  dynamic starrating;
+  dynamic feedback;
   String? createdDate;
   String? updatedDate;
   String? status;

@@ -81,11 +81,11 @@ class OrderList {
   String? orderqty;
   String? sno;
   String? createdDate;
-  dynamic? updatedDate;
+  dynamic updatedDate;
   String? orderItemNo;
   String? quantity;
   String? time;
-  dynamic? orderStatus;
+  dynamic orderStatus;
   String? orderStatusCode;
   String? chefId;
 

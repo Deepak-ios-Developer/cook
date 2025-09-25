@@ -29,7 +29,7 @@ class LoginResponseData {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
+    final Map<String, dynamic> data = Map<String, dynamic>();
     data['status'] = this.status;
     if (this.data != null) {
       data['data'] = this.data!.toJson();
@@ -48,7 +48,7 @@ class Data {
   String? companyName;
   String? lastLogin;
   bool? isLoggedIn;
-  dynamic? imageUrl;
+  dynamic imageUrl;
   String ? sessionId;
 
 

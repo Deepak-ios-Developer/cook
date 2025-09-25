@@ -72,17 +72,17 @@ class Data {
 }
 
 class ProductList {
-  dynamic? sno;
-  dynamic? orderItemNo;
-  dynamic? quantity;
-  dynamic? time;
-  dynamic? orderStatus;
-  dynamic? orderStatusCode;
-  dynamic? cookTime;
-  dynamic? categoryType;
-  dynamic? categoryName;
-      dynamic? productName;
-  dynamic? productPrice;
+  dynamic sno;
+  dynamic orderItemNo;
+  dynamic quantity;
+  dynamic time;
+  dynamic orderStatus;
+  dynamic orderStatusCode;
+  dynamic cookTime;
+  dynamic categoryType;
+  dynamic categoryName;
+      dynamic productName;
+  dynamic productPrice;
 
   ProductList(
       {this.sno,
@@ -129,13 +129,13 @@ class ProductList {
 }
 
 class PriceDetails {
-  dynamic? gSTPercentage;
-  dynamic? gSTAmount;
-  dynamic? totalPrice;
-  dynamic? discountPercentage;
-    dynamic? discountAmount;
-  dynamic? grandTotal;
-  dynamic? roundedGrandTotal;
+  dynamic gSTPercentage;
+  dynamic gSTAmount;
+  dynamic totalPrice;
+  dynamic discountPercentage;
+    dynamic discountAmount;
+  dynamic grandTotal;
+  dynamic roundedGrandTotal;
 
   PriceDetails(
       {this.gSTPercentage,
@@ -170,10 +170,10 @@ class PriceDetails {
 }
 
 class PaymentInfo {
-  dynamic? paymentStatus;
-  dynamic? modeOfPay;
-  dynamic? payRefNo;
-  dynamic? updatedDate;
+  dynamic paymentStatus;
+  dynamic modeOfPay;
+  dynamic payRefNo;
+  dynamic updatedDate;
 
   PaymentInfo(
       {this.paymentStatus, this.modeOfPay, this.payRefNo, this.updatedDate});
@@ -196,12 +196,12 @@ class PaymentInfo {
 }
 
 class UserInfo {
-  dynamic? orderNo;
-  dynamic? companyId;
-  dynamic? fullname;
-  dynamic? mobilenumber;
-  dynamic? tableNo;
-  dynamic? seatNo;
+  dynamic orderNo;
+  dynamic companyId;
+  dynamic fullname;
+  dynamic mobilenumber;
+  dynamic tableNo;
+  dynamic seatNo;
 
   UserInfo(
       {this.orderNo,
