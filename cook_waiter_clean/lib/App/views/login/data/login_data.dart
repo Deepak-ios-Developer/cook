@@ -19,7 +19,7 @@ class LoginRequestData {
 }
 class LoginResponseData {
   int? status;
-  dynamic? data;
+  dynamic data;
 
   LoginResponseData({this.status, this.data});
 

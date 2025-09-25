@@ -1,7 +1,6 @@
 // 🎯 lib/views/orders/controller/orders_controller.dart
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' as IO show Socket;
 
 import 'package:cook_waiter/App/Storage/session_storage.dart';
 import 'package:cook_waiter/App/common_widgets/common_snack_bar.dart';
@@ -9,12 +8,10 @@ import 'package:cook_waiter/App/service/app_service.dart';
 import 'package:cook_waiter/App/views/orders/data/get_all_tabel_data.dart';
 import 'package:cook_waiter/App/views/orders/data/notification_response_data.dart';
 import 'package:cook_waiter/App/views/orders/data/orders_data.dart';
-import 'package:cook_waiter/App/views/orders/data/orders_data.dart' as data;
 import 'package:cook_waiter/App/views/orders/data/orders_detail_response.dart';
 import 'package:cook_waiter/App/views/orders/data/payment_history_data.dart';
 import 'package:cook_waiter/App/views/orders/data/update_payment_response_data.dart';
 import 'package:cook_waiter/App/views/orders/service/orders_service.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:gif/gif.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -260,7 +257,6 @@ connectToSocket();
   }
 
   Future<void> fetchOrderStatuses() async {
-    var companyId = SessionStorage.getCompanyId() ?? '';
     try {
       final response = await getOrdersApi(
         orderStatus: selectedTab.value == 0
@@ -362,7 +358,7 @@ void changeTable(int index, String tableNo) {
       ordersResponse.refresh();
 
       // Set initial filtered orders
-      filteredOrders.value = ordersResponse.value?.data?.orderList ?? [];
+      filteredOrders.value = ordersResponse.value.data?.orderList ?? [];
       filteredOrders.refresh();
 
       // Apply all filters including chef filter
@@ -407,7 +403,6 @@ void changeTable(int index, String tableNo) {
     }
   }
 
-  // Updated updateOrderStatus method to handle individual orders
   Future<void> updateOrderStatusDynamic(
     String orderId,
     String sno,

@@ -1,5 +1,4 @@
 // 🎯 lib/views/orders/orders_screen.dart
-import 'package:cook_waiter/App/Routes/app_routes.dart';
 import 'package:cook_waiter/App/Storage/session_storage.dart';
 import 'package:cook_waiter/App/Themes/app_colors.dart';
 import 'package:cook_waiter/App/common_widgets/common_app_loader.dart';
@@ -654,7 +653,6 @@ class OrdersScreen extends GetView<OrdersController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: List.generate(tabs.length, (index) {
             final isSelected = controller.selectedTab.value == index;
-            final count = _getTabCount(index); // Get count for each tab
 
             return Expanded(
               child: GestureDetector(
@@ -709,29 +707,7 @@ class OrdersScreen extends GetView<OrdersController> {
   }
 
 // Add this helper method to get count for each tab
-  int _getTabCount(int tabIndex) {
-    if (controller.filteredOrders.isEmpty) return 0;
 
-    // Based on your tab switching logic with order statuses
-    switch (tabIndex) {
-      case 0: // First tab - Order Status 1
-        return controller.filteredOrders
-            .where((order) => order.orderStatusCode == "1")
-            .length;
-      case 1: // Second tab - Order Status 3
-        return controller.filteredOrders
-            .where((order) => order.orderStatusCode == "3")
-            .length;
-      case 2: // Third tab - Order Status 4
-        return controller.filteredOrders
-            .where((order) => order.orderStatusCode == "4")
-            .length;
-      default: // Default - Order Status 1
-        return controller.filteredOrders
-            .where((order) => order.orderStatusCode == "1")
-            .length;
-    }
-  }
 
   Widget _tabelListWidget() {
     return Obx(() {
@@ -918,7 +894,6 @@ class OrdersScreen extends GetView<OrdersController> {
     final bool isGrey = index % 2 == 0;
     final GlobalKey<SlideActionState> _sliderKey =
         GlobalKey<SlideActionState>();
-    var orderTime = formatDate(order.createdDate);
 
     final currentStatusCode = order.orderStatusCode ?? "1";
     final isUpdatingThisOrder = controller.isOrderUpdating(order.sno ?? "");
