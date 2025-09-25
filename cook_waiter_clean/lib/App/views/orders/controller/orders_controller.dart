@@ -439,15 +439,34 @@ void changeTable(int index, String tableNo) {
       if (response.status == "success") {
         // Update the order in the local list immediately
         if (currentStatusCode != "5") {
-          // If current status is "Preparing", we need to stop the timer
           updateLocalOrderStatus(
-              index, nextStatus?["code"], nextStatus?["label"]);
+            index,
+            nextStatus?["code"],
+            nextStatus?["label"],
+          );
+
           CommonSnackbar.show(
             Get.context!,
             message: "Order moved to ${nextStatus?["label"]}",
             isSuccess: true,
           );
         }
+
+        // ✅ Emit socket event after API success
+        socketService.emitOrderStatusUpdate(
+          orderId: response.orderid ?? orderId,
+          orderUpdatedStatus: nextStatus?["label"] ?? "",
+          restaurantClientId: response.companyId ?? companyId,
+          customerId: response.mobilenumber ?? "",
+          onAck: (success, message) {
+            if (success) {
+              print("📤 Order status update emitted successfully");
+            } else {
+              print("⚠️ Order status update emit failed: $message");
+            }
+          },
+        );
+
         // Refresh the list for the selected tab
         getOrdersApi(orderStatus: orderStatusParam);
       } else {
@@ -841,7 +860,7 @@ class SocketService {
   late IO.Socket socket;
 
   void connectToSocket() {
-    socket = IO.io('https://51baaeba68b9.ngrok-free.app', <String, dynamic>{
+    socket = IO.io('https://websocket.induzkart.com/', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });
@@ -849,7 +868,7 @@ class SocketService {
     socket.connect();
 
     // Connection events
-    socket.onConnect((_) => print('✅ Connected to socket server'));
+    socket.onConnect((_) => print('✅ Connected to socket server${socket.id}'));
     socket.onDisconnect((_) => print('❌ Disconnected from socket server'));
     socket.onConnectError((data) => print('⚠️ Connect error: $data'));
     socket.onError((data) => print('⚠️ General error: $data'));
@@ -884,18 +903,17 @@ class SocketService {
     });
 
     // 2️⃣ Listen to all events
-   socket.onAny((event, data) {
-  print("📌 Event: $event, Data: $data");
+    socket.onAny((event, data) {
+      print("📌 Event: $event, Data: $data");
 
-  if (event == 'order-received' && data is List && data.isNotEmpty) {
-    CommonSnackbar.show(
-      Get.context!,
-      message: "New Order Received! Order ID: ${data[0]['orderId']}",
-      isSuccess: true,
-    );
-  }
-});
-
+      if (event == 'order-received' && data is List && data.isNotEmpty) {
+        CommonSnackbar.show(
+          Get.context!,
+          message: "New Order Received! Order ID: ${data[0]['orderId']}",
+          isSuccess: true,
+        );
+      }
+    });
 
     // 3️⃣ Listen specifically for server pushes on "register-client"
     socket.on("register-client", (data) {
@@ -906,5 +924,33 @@ class SocketService {
 
   void disconnect() {
     socket.disconnect();
+  }
+}
+
+extension OrderStatusSocket on SocketService {
+  /// Emit order status update
+  void emitOrderStatusUpdate({
+    required String orderId,
+    required String orderUpdatedStatus,
+    required String restaurantClientId,
+    required String customerId,
+    void Function(bool success, String? message)? onAck,
+  }) {
+    final updateData = {
+      "orderId": orderId,
+      "orderUpdatedStatus": orderUpdatedStatus,
+      "restaurantClientId": restaurantClientId,
+      "customerId": customerId,
+    };
+
+    print("📤 Emitting order-status-update: $updateData");
+
+    // Emit with acknowledgement (server response)
+    socket.emitWithAck("order-status-update", updateData, ack: (response) {
+      print("✅ Order status update response: $response");
+      final success = response['success'] ?? false;
+      final message = response['message'];
+      if (onAck != null) onAck(success, message);
+    });
   }
 }

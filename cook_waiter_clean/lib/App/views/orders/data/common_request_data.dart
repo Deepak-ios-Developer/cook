@@ -21,16 +21,33 @@ class StatusUpdateRequestData {
 }
 
 class StatusUpdateResponseData {
+  int? curOrderStatus;
+  String? orderid;
+  String? mobilenumber;
+  String? companyId;
   String? status;
 
-  StatusUpdateResponseData({this.status});
+  StatusUpdateResponseData(
+      {this.curOrderStatus,
+      this.orderid,
+      this.mobilenumber,
+      this.companyId,
+      this.status});
 
   StatusUpdateResponseData.fromJson(Map<String, dynamic> json) {
+    curOrderStatus = json['curOrderStatus'];
+    orderid = json['orderid'];
+    mobilenumber = json['mobilenumber'];
+    companyId = json['CompanyId'];
     status = json['status'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['curOrderStatus'] = this.curOrderStatus;
+    data['orderid'] = this.orderid;
+    data['mobilenumber'] = this.mobilenumber;
+    data['CompanyId'] = this.companyId;
     data['status'] = this.status;
     return data;
   }
